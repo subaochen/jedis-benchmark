@@ -1,8 +1,8 @@
 package in.sheki.jedis.benchmark;
 
 import com.beust.jcommander.JCommander;
-import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.pool.impl.GenericObjectPool;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
@@ -33,10 +33,10 @@ public class Benchmark
     {
         this.noOps_ = noOps;
         this.executor = new PausableThreadPoolExecutor(noThreads, noThreads, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
-        final GenericObjectPool.Config poolConfig = new GenericObjectPool.Config();
-        poolConfig.testOnBorrow = true;
-        poolConfig.testOnReturn = true;
-        poolConfig.maxActive = noJedisConn;
+        final GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
+        poolConfig.setTestOnBorrow(true);
+        poolConfig.setTestOnReturn(true);
+        poolConfig.setMaxTotal(noJedisConn);
         this.pool = new JedisPool(poolConfig, host, port);
         this.data = RandomStringUtils.random(dataSize);
         shutDownLatch = new CountDownLatch(noOps);
