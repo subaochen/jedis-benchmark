@@ -3,12 +3,12 @@ package in.sheki.jedis.benchmark;
 import com.beust.jcommander.JCommander;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPool;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -18,15 +18,15 @@ import java.util.concurrent.TimeUnit;
  */
 public class Benchmark
 {
-
-
     private final int noOps_;
     private final LinkedBlockingQueue<Long> setRunTimes = new LinkedBlockingQueue<Long>();
     private PausableThreadPoolExecutor executor;
     private final JedisPool pool;
+    private final JedisCluster jc;
     private final String data;
     private final CountDownLatch shutDownLatch;
     private long totalNanoRunTime;
+    private static boolean clustered = false;
 
 
     public Benchmark(final int noOps, final int noThreads, final int noJedisConn, final String host, final int port, int dataSize)
@@ -40,6 +40,9 @@ public class Benchmark
         this.pool = new JedisPool(poolConfig, host, port);
         this.data = RandomStringUtils.random(dataSize);
         shutDownLatch = new CountDownLatch(noOps);
+        Set<HostAndPort> jedisClusterNodes = new HashSet<HostAndPort>();
+        jedisClusterNodes.add(new HostAndPort(host, port));
+        jc = new JedisCluster(jedisClusterNodes);
 
     }
 
@@ -55,10 +58,15 @@ public class Benchmark
         public void run()
         {
             long startTime = System.nanoTime();
-            Jedis jedis = pool.getResource();
-            jedis.set(RandomStringUtils.random(15), data);
+            String key = RandomStringUtils.random(15);
+            if(clustered) {
+                jc.set(key, data);
+            } else {
+                Jedis jedis = pool.getResource();
+                jedis.set(key, data);
+                pool.returnResource(jedis);
+            }
             setRunTimes.offer(System.nanoTime() - startTime);
-            pool.returnResource(jedis);
             latch_.countDown();
         }
     }
@@ -104,6 +112,7 @@ public class Benchmark
     {
         CommandLineArgs cla = new CommandLineArgs();
         new JCommander(cla, args);
+        if(cla.clustered != 0) clustered = true;
         Benchmark benchmark = new Benchmark(cla.noOps, cla.noThreads, cla.noConnections, cla.host, cla.port, cla.dataSize);
         benchmark.performBenchmark();
         benchmark.printStats();

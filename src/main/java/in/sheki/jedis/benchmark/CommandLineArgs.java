@@ -29,4 +29,7 @@ public class CommandLineArgs
     public Integer port = 6379;
     @Parameter(names = "-s", description = "data size in bytes")
     public Integer dataSize = 100;
+
+    @Parameter(names = "-g", description = "cluster enabled")
+    public Integer clustered = 0;
 }
