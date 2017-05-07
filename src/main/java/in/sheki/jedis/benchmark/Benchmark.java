@@ -7,6 +7,7 @@ import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.exceptions.JedisDataException;
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -22,7 +23,7 @@ public class Benchmark
     private final LinkedBlockingQueue<Long> setRunTimes = new LinkedBlockingQueue<Long>();
     private PausableThreadPoolExecutor executor;
     private final JedisPool pool;
-    private final JedisCluster jc;
+    private static JedisCluster jc;
     private final String data;
     private final CountDownLatch shutDownLatch;
     private long totalNanoRunTime;
@@ -110,12 +111,35 @@ public class Benchmark
 
     public static void main(String[] args) throws InterruptedException
     {
+
         CommandLineArgs cla = new CommandLineArgs();
         new JCommander(cla, args);
-        if(cla.clustered != 0) clustered = true;
         Benchmark benchmark = new Benchmark(cla.noOps, cla.noThreads, cla.noConnections, cla.host, cla.port, cla.dataSize);
+        if(cla.clustered != 0) {
+            clustered = true;
+            flushAllNodes();
+        }
+
         benchmark.performBenchmark();
         benchmark.printStats();
+    }
+
+    private static void flushAllNodes() {
+        Map<String,JedisPool> nodes = jc.getClusterNodes();
+        for(String hnp:nodes.keySet()) {
+            Jedis node = createNode(hnp);
+            // will report such message on slave node:(error) READONLY You can't write against a read only slave.
+            // we can just ignore it safely
+            try {
+                node.flushAll();
+            }catch(JedisDataException e) {}
+        }
+    }
+
+    private static Jedis createNode(String hnp) {
+        String host = hnp.split(":")[0];
+        String port = hnp.split(":")[1];
+        return new Jedis(host, Integer.parseInt(port));
     }
 
 
