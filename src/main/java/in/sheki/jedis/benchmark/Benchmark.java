@@ -28,22 +28,33 @@ public class Benchmark
     private final CountDownLatch shutDownLatch;
     private long totalNanoRunTime;
     private static boolean clustered = false;
+    private static boolean proxyed = false;
 
 
-    public Benchmark(final int noOps, final int noThreads, final int noJedisConn, final String host, final int port, int dataSize)
+    public Benchmark(final int noOps, final int noThreads, final int noJedisConn, final String host, final int port, int dataSize, int clustered, int proxy)
     {
+        int finalPort = port;
+        if(clustered != 0) {
+            Set<HostAndPort> jedisClusterNodes = new HashSet<HostAndPort>();
+            jedisClusterNodes.add(new HostAndPort(host, port));
+            jc = new JedisCluster(jedisClusterNodes);
+        }
+
+        // 如果使用proxy方式访问redis集群的话
+        if(proxy != 0) {
+            finalPort = proxy;
+        }
+
         this.noOps_ = noOps;
         this.executor = new PausableThreadPoolExecutor(noThreads, noThreads, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
         final GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
         poolConfig.setTestOnBorrow(true);
         poolConfig.setTestOnReturn(true);
         poolConfig.setMaxTotal(noJedisConn);
-        this.pool = new JedisPool(poolConfig, host, port);
+        this.pool = new JedisPool(poolConfig, host, finalPort);
         this.data = RandomStringUtils.random(dataSize);
         shutDownLatch = new CountDownLatch(noOps);
-        Set<HostAndPort> jedisClusterNodes = new HashSet<HostAndPort>();
-        jedisClusterNodes.add(new HostAndPort(host, port));
-        jc = new JedisCluster(jedisClusterNodes);
+
 
     }
 
@@ -60,7 +71,7 @@ public class Benchmark
         {
             long startTime = System.nanoTime();
             String key = RandomStringUtils.random(15);
-            if(clustered) {
+            if(clustered && !proxyed) {
                 jc.set(key, data);
             } else {
                 Jedis jedis = pool.getResource();
@@ -114,7 +125,8 @@ public class Benchmark
 
         CommandLineArgs cla = new CommandLineArgs();
         new JCommander(cla, args);
-        Benchmark benchmark = new Benchmark(cla.noOps, cla.noThreads, cla.noConnections, cla.host, cla.port, cla.dataSize);
+        Benchmark benchmark = new Benchmark(cla.noOps, cla.noThreads, cla.noConnections, cla.host, cla.port, cla.dataSize,cla.clustered,cla.proxy);
+        if(cla.proxy != 0) proxyed = true;
         if(cla.clustered != 0) {
             clustered = true;
             flushAllNodes();
@@ -137,7 +149,8 @@ public class Benchmark
     }
 
     private static Jedis createNode(String hnp) {
-        String host = hnp.split(":")[0];
+        // TODO 如何正确获取cluster host？
+        String host = "192.168.1.215";
         String port = hnp.split(":")[1];
         return new Jedis(host, Integer.parseInt(port));
     }

@@ -32,4 +32,7 @@ public class CommandLineArgs
 
     @Parameter(names = "-g", description = "cluster enabled")
     public Integer clustered = 0;
+
+    @Parameter(names="-x", description = "proxy port")
+    public Integer proxy = 0;
 }
