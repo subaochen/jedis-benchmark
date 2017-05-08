@@ -150,7 +150,7 @@ public class Benchmark
 
     private static Jedis createNode(String hnp) {
         // TODO 如何正确获取cluster host？
-        String host = "192.168.1.215";
+        String host = hnp.split(":")[0];
         String port = hnp.split(":")[1];
         return new Jedis(host, Integer.parseInt(port));
     }
