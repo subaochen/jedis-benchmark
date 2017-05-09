@@ -73,6 +73,7 @@ public class Benchmark
             String key = RandomStringUtils.random(15);
             if(clustered && !proxyed) {
                 jc.set(key, data);
+                System.out.println("sent to redis cluster,key=" + key );
             } else {
                 Jedis jedis = pool.getResource();
                 jedis.set(key, data);
