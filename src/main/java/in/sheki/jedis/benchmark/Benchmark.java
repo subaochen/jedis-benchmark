@@ -3,6 +3,8 @@ package in.sheki.jedis.benchmark;
 import com.beust.jcommander.JCommander;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
@@ -29,6 +31,7 @@ public class Benchmark
     private long totalNanoRunTime;
     private static boolean clustered = false;
     private static boolean proxyed = false;
+    final Logger logger = LoggerFactory.getLogger(Benchmark.class);
 
 
     public Benchmark(final int noOps, final int noThreads, final int noJedisConn, final String host, final int port, int dataSize, int clustered, int proxy)
@@ -72,8 +75,10 @@ public class Benchmark
             long startTime = System.nanoTime();
             String key = RandomStringUtils.random(15);
             if(clustered && !proxyed) {
+                // jedis-benchmark在测试redis cluster经常无故挂起？
+                logger.info("before send to redis cluster,key=" + key );
                 jc.set(key, data);
-                System.out.println("sent to redis cluster,key=" + key );
+                logger.info("after sent to redis cluster,key=" + key );
             } else {
                 Jedis jedis = pool.getResource();
                 jedis.set(key, data);

@@ -58,6 +58,13 @@
             <artifactId>async-http-client</artifactId>
             <version>1.9.40</version>
         </dependency>
+
+        <!-- for test, will remove soon -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.8.0-alpha2</version>
+        </dependency>
     </dependencies>
 
     <build>

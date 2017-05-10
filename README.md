@@ -13,7 +13,10 @@ The program assumes defaults for all the values, which can be changed by using t
 -  -c : number of Jedis connections. Default is 1.
 -  -h : Host on which redis is running. Default is "localhost".
 -  -p : Redis port. Default is 6379.
--  s  : Data size to be performed on the set operation. (currently only performs the set operation).
+-  -s : Data size to be performed on the set operation. (currently only performs the set operation).
+-  -g : connect to redis cluster, if not zero.
+-  -x : proxy port.
+
 
 
 ##TODO
