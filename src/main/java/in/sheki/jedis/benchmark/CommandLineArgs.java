@@ -35,4 +35,7 @@ public class CommandLineArgs
 
     @Parameter(names="-x", description = "proxy port")
     public Integer proxy = 0;
+
+    @Parameter(names="-l", description = "infinite loop mode if not zero")
+    public Integer loop = 0;
 }

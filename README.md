@@ -16,6 +16,7 @@ The program assumes defaults for all the values, which can be changed by using t
 -  -s : Data size to be performed on the set operation. (currently only performs the set operation).
 -  -g : connect to redis cluster, if not zero.
 -  -x : proxy port.
+-  -l : infinite loop mode if not zero, only way to stop the benchmark is to kill the process.
 
 
 
